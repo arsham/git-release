@@ -32,11 +32,11 @@ pub fn repo_init() -> (TempDir, Repository) {
     (td, repo)
 }
 
-pub fn commit(repo: &Repository) -> (Oid, Oid) {
+pub fn commit(repo: &Repository, filename: &str) -> (Oid, Oid) {
     let mut index = t!(repo.index());
     let root = repo.path().parent().unwrap();
-    t!(File::create(root.join("foo")));
-    t!(index.add_path(Path::new("foo")));
+    t!(File::create(root.join(filename)));
+    t!(index.add_path(Path::new(filename)));
 
     let tree_id = t!(index.write_tree());
     let tree = t!(repo.find_tree(tree_id));
