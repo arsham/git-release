@@ -2,6 +2,8 @@
 
 use std::path::Path;
 
+use git2::{Commit, ErrorClass, ErrorCode};
+
 #[cfg(test)]
 mod tests;
 
@@ -28,11 +30,23 @@ impl Workspace {
             Ok(tag.to_string())
         } else {
             Err(git2::Error::new(
-                git2::ErrorCode::NotFound,
-                git2::ErrorClass::Tag,
+                ErrorCode::NotFound,
+                ErrorClass::Tag,
                 "no tags found",
             ))
         }
+    }
+
+    fn validate_tag(&self, tag: &str) -> Result<git2::Oid, git2::Error> {
+        let rev = self.repo.revparse(tag)?;
+        Ok(rev
+            .from()
+            .ok_or(git2::Error::new(
+                ErrorCode::NotFound,
+                ErrorClass::Tag,
+                format!("given {tag} tag is not valid"),
+            ))?
+            .id())
     }
 
     /// Returns the tag before the given input. If the tag is the first tag in the repository, the
@@ -42,22 +56,7 @@ impl Workspace {
     ///
     /// If the tag is not in the repository, an `Err` is returned.
     pub fn previous_tag(&self, current: &str) -> Result<String, git2::Error> {
-        let tags = self.repo.tag_names(None)?;
-        let mut tags = tags.iter().filter(|&tag| {
-            if let Some(tag) = tag {
-                tag == current
-            } else {
-                false
-            }
-        });
-
-        if tags.next().is_none() {
-            return Err(git2::Error::new(
-                git2::ErrorCode::NotFound,
-                git2::ErrorClass::Tag,
-                "given tag is not valid",
-            ));
-        };
+        self.validate_tag(current)?;
 
         let tags = self.repo.tag_names(None)?;
         let mut tag = tags
@@ -72,5 +71,45 @@ impl Workspace {
             let head = self.repo.head()?;
             Ok(head.peel_to_commit().unwrap().id().to_string())
         }
+    }
+
+    /// Returns all commits between two tags. It excludes the commit that `from` is pointing at,
+    /// and includes the commit that the `to` is pointing at.
+    ///
+    /// # Errors
+    ///
+    /// If either tags is not in the repository, or both point to the same commit, an `Err` is
+    /// returned.
+    pub fn commits_between_tags(&self, from: &str, to: &str) -> Result<Vec<Commit>, git2::Error> {
+        let from_obj = self.repo.revparse_single(from)?;
+        let to_obj = self.repo.revparse_single(to)?;
+        let from = from_obj.id();
+        let to = to_obj.id();
+
+        let from_obj = from_obj.peel_to_commit()?;
+        let to_obj = to_obj.peel_to_commit()?;
+        if from_obj.id() == to_obj.id() {
+            return Err(git2::Error::new(
+                ErrorCode::User,
+                ErrorClass::Tag,
+                "both tags are pointed at the same commit",
+            ));
+        }
+
+        let mut res = self.repo.revwalk()?;
+        let range = format!("{from}..{to}");
+        res.push_range(&range)?;
+        res.set_sorting(git2::Sort::REVERSE)?;
+        let res = res
+            .filter_map(Result::ok)
+            .filter_map(|oid| {
+                if let Ok(oid) = self.repo.find_commit(oid) {
+                    Some(oid)
+                } else {
+                    None
+                }
+            })
+            .collect();
+        Ok(res)
     }
 }

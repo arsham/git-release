@@ -3,6 +3,8 @@ use std::fs::File;
 use std::path::Path;
 use tempfile::TempDir;
 
+// Some of these helpers are borrowed from the git2 code.
+
 macro_rules! t {
     ($e:expr) => {
         match $e {
@@ -45,4 +47,19 @@ pub fn commit(repo: &Repository, filename: &str) -> (Oid, Oid) {
     let parent = t!(repo.find_commit(head_id));
     let commit = t!(repo.commit(Some("HEAD"), &sig, &sig, "commit", &tree, &[&parent]));
     (commit, tree_id)
+}
+
+pub fn commit_tag(repo: &Repository, filename: &str, tag: &str) -> (Oid, Oid) {
+    let (commit, _) = commit(repo, filename);
+    let obj = repo.find_object(commit, None).unwrap();
+    let sig = repo.signature().unwrap();
+    let tag = repo.tag(tag, &obj, &sig, "msg", false).unwrap();
+    (commit, tag)
+}
+
+pub fn commit_lightweight_tag(repo: &Repository, filename: &str, tag: &str) -> (Oid, Oid) {
+    let (commit, _) = commit(repo, filename);
+    let obj = repo.find_object(commit, None).unwrap();
+    let tag = repo.tag_lightweight(tag, &obj, false).unwrap();
+    (commit, tag)
 }
