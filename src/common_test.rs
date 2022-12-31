@@ -34,7 +34,7 @@ pub fn repo_init() -> (TempDir, Repository) {
     (td, repo)
 }
 
-pub fn commit(repo: &Repository, filename: &str) -> (Oid, Oid) {
+pub fn commit(repo: &Repository, filename: &str, msg: Option<&str>) -> (Oid, Oid) {
     let mut index = t!(repo.index());
     let root = repo.path().parent().unwrap();
     t!(File::create(root.join(filename)));
@@ -45,12 +45,17 @@ pub fn commit(repo: &Repository, filename: &str) -> (Oid, Oid) {
     let sig = t!(repo.signature());
     let head_id = t!(repo.refname_to_id("HEAD"));
     let parent = t!(repo.find_commit(head_id));
-    let commit = t!(repo.commit(Some("HEAD"), &sig, &sig, "commit", &tree, &[&parent]));
+    let msg = if let Some(msg) = msg {
+        msg
+    } else {
+        "some commit"
+    };
+    let commit = t!(repo.commit(Some("HEAD"), &sig, &sig, msg, &tree, &[&parent]));
     (commit, tree_id)
 }
 
 pub fn commit_tag(repo: &Repository, filename: &str, tag: &str) -> (Oid, Oid) {
-    let (commit, _) = commit(repo, filename);
+    let (commit, _) = commit(repo, filename, None);
     let obj = repo.find_object(commit, None).unwrap();
     let sig = repo.signature().unwrap();
     let tag = repo.tag(tag, &obj, &sig, "msg", false).unwrap();
@@ -58,7 +63,7 @@ pub fn commit_tag(repo: &Repository, filename: &str, tag: &str) -> (Oid, Oid) {
 }
 
 pub fn commit_lightweight_tag(repo: &Repository, filename: &str, tag: &str) -> (Oid, Oid) {
-    let (commit, _) = commit(repo, filename);
+    let (commit, _) = commit(repo, filename, None);
     let obj = repo.find_object(commit, None).unwrap();
     let tag = repo.tag_lightweight(tag, &obj, false).unwrap();
     (commit, tag)

@@ -3,6 +3,10 @@ workspace:
   - workspace/*
   - workspace/**/*
 
+repository:
+  - workspace/repository.rs
+  - workspace/repository_tests.rs
+
 ci:
   - .github/*
   - .github/**/*
