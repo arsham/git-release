@@ -7,6 +7,10 @@ repository:
   - workspace/repository.rs
   - workspace/repository_tests.rs
 
+commit:
+  - workspace/commit.rs
+  - workspace/commit_tests.rs
+
 ci:
   - .github/*
   - .github/**/*
