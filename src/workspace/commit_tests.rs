@@ -107,6 +107,8 @@ mod verb {
             "(repo/exec): something",
             "(s3/exec): something",
             "(exec/s3): something",
+            "(server)!: something",
+            "!(server): something",
         ];
         for tc in tcs {
             let (dir, _) = common_test::repo_init();
@@ -188,6 +190,62 @@ mod references {
         let (oid, _) = common_test::commit(&repo, "filename", Some(body));
         let commit: Commit = repo.find_commit(oid)?.into();
         assert_eq!(vec![Reference(123), Reference(456)], commit.references());
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod is_breaking {
+    use super::*;
+
+    #[test]
+    fn not_breaking() -> Result<(), Box<dyn std::error::Error>> {
+        let tcs = vec![
+            "ref: something 23\n\nRef #123, Close #456",
+            "ref: !something 23\n\nRef #123, Close #456",
+            "ref(repo): something 23\n\nRef #123, Close #456",
+            "ref(repo): something 23\n\nRef #123!, Close #456",
+        ];
+        for body in tcs {
+            let (dir, _) = common_test::repo_init();
+            let repo = git2::Repository::open(&dir)?;
+            let (oid, _) = common_test::commit(&repo, "filename", Some(body));
+            let commit: Commit = repo.find_commit(oid)?.into();
+            assert!(!commit.is_breaking(), "{body}");
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn in_title() -> Result<(), Box<dyn std::error::Error>> {
+        let tcs = vec![
+            "ref!: something 23\n\nRef #123, Close #456",
+            "ref(repo)!: something 23\n\nRef #123, Close #456",
+            "ref!(repo): something 23\n\nRef #123, Close #456",
+        ];
+        for body in tcs {
+            let (dir, _) = common_test::repo_init();
+            let repo = git2::Repository::open(&dir)?;
+            let (oid, _) = common_test::commit(&repo, "filename", Some(body));
+            let commit: Commit = repo.find_commit(oid)?.into();
+            assert!(commit.is_breaking(), "{body}");
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn in_footer() -> Result<(), Box<dyn std::error::Error>> {
+        let tcs = vec![
+            "ref(repo): this is a new api\n\nBREAKING CHANGE: this is a changed api",
+            "ref(repo): this is a new api\n\nSomething.\nBREAKING CHANGE: this is a changed api",
+        ];
+        for body in tcs {
+            let (dir, _) = common_test::repo_init();
+            let repo = git2::Repository::open(&dir)?;
+            let (oid, _) = common_test::commit(&repo, "filename", Some(body));
+            let commit: Commit = repo.find_commit(oid)?.into();
+            assert!(commit.is_breaking(), "{body}");
+        }
         Ok(())
     }
 }
