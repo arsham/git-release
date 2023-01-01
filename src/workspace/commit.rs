@@ -5,6 +5,7 @@ use regex::Regex;
 
 lazy_static! {
     static ref SUMMARY_RE: Regex = Regex::new(r#"^\s*(\w+!?)\(?([\w,_-]+)?\)?(!)?:?(.*)"#).unwrap();
+    static ref REF_RE: Regex = Regex::new(r#"\w+\s+#(\d+)"#).unwrap();
 }
 
 /// A Commit represents a commit in the repository with its metadata.
@@ -44,6 +45,24 @@ impl Commit<'_> {
             })
             .unwrap_or("Misc");
     }
+
+    /// Returns a vector of references to other issues on github.
+    pub fn references(&self) -> Vec<Reference> {
+        let body = &format!(
+            "{}\n{}",
+            self.title().unwrap_or(""),
+            self.commit.body().unwrap_or("")
+        );
+        let mut refs = vec![];
+        for cap in REF_RE.captures_iter(body) {
+            if let Some(num) = cap.get(1) {
+                if let Ok(num) = num.as_str().parse() {
+                    refs.push(Reference(num));
+                }
+            }
+        }
+        refs
+    }
 }
 
 impl<'a> From<git2::Commit<'a>> for Commit<'a> {
@@ -51,3 +70,7 @@ impl<'a> From<git2::Commit<'a>> for Commit<'a> {
         Commit { commit }
     }
 }
+
+/// A Reference represents a link to a github issue.
+#[derive(Debug, PartialEq, Eq)]
+pub struct Reference(pub u16);

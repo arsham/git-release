@@ -121,3 +121,73 @@ mod verb {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod references {
+    use super::*;
+    use crate::workspace::commit::Reference;
+
+    #[test]
+    fn no_references() -> Result<(), Box<dyn std::error::Error>> {
+        let tcs = vec![
+            "feat(commit): this is a title",
+            "feat(commit): 123 this is a title",
+            "feat(commit): #,123 this is a title",
+            "feat(commit): # 123 this is a title",
+            "feat(commit): #-123 this is a title",
+            "feat(commit): #a123 this is a title",
+        ];
+        for body in tcs {
+            let (dir, _) = common_test::repo_init();
+            let repo = git2::Repository::open(&dir)?;
+            let (oid, _) = common_test::commit(&repo, "filename", Some(body));
+            let commit: Commit = repo.find_commit(oid)?.into();
+            assert_eq!(Vec::<Reference>::new(), commit.references(), "{body}");
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn in_summary() -> Result<(), Box<dyn std::error::Error>> {
+        let (dir, _) = common_test::repo_init();
+        let repo = git2::Repository::open(&dir)?;
+        let body = "feat(commit): this links to #123\n\nSomething is here";
+        let (oid, _) = common_test::commit(&repo, "filename", Some(body));
+        let commit: Commit = repo.find_commit(oid)?.into();
+        assert_eq!(vec![Reference(123)], commit.references(), "{body}");
+        Ok(())
+    }
+
+    #[test]
+    fn in_start_of_line() -> Result<(), Box<dyn std::error::Error>> {
+        let (dir, _) = common_test::repo_init();
+        let repo = git2::Repository::open(&dir)?;
+        let body = "feat:something 23\n\n#123: is the ref";
+        let (oid, _) = common_test::commit(&repo, "filename", Some(body));
+        let commit: Commit = repo.find_commit(oid)?.into();
+        assert_eq!(vec![Reference(123)], commit.references(), "{body}");
+        Ok(())
+    }
+
+    #[test]
+    fn at_the_end_of_line() -> Result<(), Box<dyn std::error::Error>> {
+        let (dir, _) = common_test::repo_init();
+        let repo = git2::Repository::open(&dir)?;
+        let body = "feat:something 23\n\nRef #123";
+        let (oid, _) = common_test::commit(&repo, "filename", Some(body));
+        let commit: Commit = repo.find_commit(oid)?.into();
+        assert_eq!(vec![Reference(123)], commit.references());
+        Ok(())
+    }
+
+    #[test]
+    fn multiple_refs_in_line() -> Result<(), Box<dyn std::error::Error>> {
+        let (dir, _) = common_test::repo_init();
+        let repo = git2::Repository::open(&dir)?;
+        let body = "feat:something 23\n\nRef #123, Close #456";
+        let (oid, _) = common_test::commit(&repo, "filename", Some(body));
+        let commit: Commit = repo.find_commit(oid)?.into();
+        assert_eq!(vec![Reference(123), Reference(456)], commit.references());
+        Ok(())
+    }
+}
