@@ -196,6 +196,73 @@ mod references {
 }
 
 #[cfg(test)]
+mod subjects {
+    use super::*;
+
+    #[test]
+    fn no_subject() -> Result<(), Box<dyn std::error::Error>> {
+        let tcs = vec![
+            "something",
+            "ref something",
+            "ref(): something",
+            "ref: something",
+            "ref: (something)",
+            "ref: (something): something",
+        ];
+        for body in tcs {
+            let (dir, _) = common_test::repo_init();
+            let repo = git2::Repository::open(&dir)?;
+            let (oid, _) = common_test::commit(&repo, "filename", Some(body));
+            let commit: Commit = repo.find_commit(oid)?.into();
+            let subjects = commit.subjects();
+            assert!(subjects.is_none(), "{body} -> {:?}", subjects.unwrap());
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn subjects() -> Result<(), Box<dyn std::error::Error>> {
+        let tcs = vec![
+            ("ref(repo): something", vec!["repo"]),
+            ("ref(Repo): something", vec!["Repo"]),
+            ("ref (repo): something", vec!["repo"]),
+            ("ref (repo) : something", vec!["repo"]),
+            ("ref ( repo ) : something", vec!["repo"]),
+            ("ref(repo,server): something", vec!["repo", "server"]),
+            ("ref(repo, server): something", vec!["repo", "server"]),
+            ("ref(repo ,server): something", vec!["repo", "server"]),
+            ("ref(repo server): something", vec!["repo server"]),
+            ("ref(repo.server): something", vec!["repo.server"]),
+            ("ref(repo .server): something", vec!["repo .server"]),
+            ("ref(repo. server): something", vec!["repo. server"]),
+            ("ref(repo-server): something", vec!["repo-server"]),
+            ("ref(repo -server): something", vec!["repo -server"]),
+            ("ref(repo- server): something", vec!["repo- server"]),
+            ("ref(repo - server): something", vec!["repo - server"]),
+            ("ref(repo_server): something", vec!["repo_server"]),
+            ("ref(repo _server): something", vec!["repo _server"]),
+            ("ref(repo_ server): something", vec!["repo_ server"]),
+            ("ref(repo _ server): something", vec!["repo _ server"]),
+            ("ref(repo/server): something", vec!["repo/server"]),
+            (
+                "ref(repo server, repo): something",
+                vec!["repo server", "repo"],
+            ),
+        ];
+        for (body, want) in tcs {
+            let (dir, _) = common_test::repo_init();
+            let repo = git2::Repository::open(&dir)?;
+            let (oid, _) = common_test::commit(&repo, "filename", Some(body));
+            let commit: Commit = repo.find_commit(oid)?.into();
+            let subjects = commit.subjects();
+            assert!(subjects.is_some(), "{body}");
+            assert_eq!(&subjects.unwrap(), &want);
+        }
+        Ok(())
+    }
+}
+
+#[cfg(test)]
 mod is_breaking {
     use super::*;
 

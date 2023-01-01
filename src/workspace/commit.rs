@@ -8,7 +8,8 @@ use regex::Regex;
 mod commit_test;
 
 lazy_static! {
-    static ref SUMMARY_RE: Regex = Regex::new(r#"^\s*(\w+)\(?([\w,_-]+)?\)?(!)?:?(.*)"#).unwrap();
+    static ref SUMMARY_RE: Regex =
+        Regex::new(r#"^\s*(\w+)( *\(([ /.\w,_-]+)?\) *)?(!)? *:?(.*)"#).unwrap();
     static ref REF_RE: Regex = Regex::new(r#"\w+\s+#(\d+)"#).unwrap();
 }
 
@@ -56,6 +57,15 @@ impl Commit<'_> {
         refs
     }
 
+    /// Returns a vector of subjects in the title if provided. Subjects are separated by comma.
+    pub fn subjects(&self) -> Option<Vec<&str>> {
+        self.title().and_then(|title| {
+            return SUMMARY_RE
+                .captures(title)
+                .and_then(|caps| Some(caps.get(3)?.as_str().split(',').map(str::trim).collect()));
+        })
+    }
+
     /// Returns true if the commit has breaking changes. There are two ways a commit is breaking:
     /// 1. If the title has an explanation mark in front of the verb.
     /// 2. If the footer starts with `BREAKING CHANGE:`.
@@ -64,7 +74,7 @@ impl Commit<'_> {
             .and_then(|title| {
                 SUMMARY_RE
                     .captures(title)
-                    .and_then(|caps| caps.get(3).map(|_| true))
+                    .and_then(|caps| caps.get(4).map(|_| true))
             })
             .unwrap_or_else(|| {
                 self.commit
