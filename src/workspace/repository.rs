@@ -4,6 +4,10 @@ use std::path::Path;
 
 use git2::{Commit, ErrorClass, ErrorCode};
 
+#[cfg(test)]
+#[path = "./repository_test.rs"]
+mod repository_test;
+
 /// Repository represents the workspace in a git repository. You can use this struct to query for
 /// various information against the underlying database.
 pub struct Repository {
@@ -68,6 +72,7 @@ impl Repository {
             Ok(tag.to_string())
         } else {
             let head = self.repo.head()?;
+            // TODO: remove unwrap
             Ok(head.peel_to_commit().unwrap().id().to_string())
         }
     }

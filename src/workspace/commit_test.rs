@@ -1,3 +1,4 @@
+#[cfg(test)]
 use crate::{common_test, workspace::commit::Commit};
 
 #[cfg(test)]

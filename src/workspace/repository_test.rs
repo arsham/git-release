@@ -1,4 +1,4 @@
-use super::super::common_test;
+use super::super::super::common_test;
 use crate::workspace::repository::Repository;
 
 #[cfg(test)]

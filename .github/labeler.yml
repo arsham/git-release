@@ -11,6 +11,10 @@ commit:
   - workspace/commit.rs
   - workspace/commit_tests.rs
 
+release:
+  - workspace/release.rs
+  - workspace/release_tests.rs
+
 ci:
   - .github/*
   - .github/**/*

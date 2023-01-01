@@ -3,12 +3,17 @@
 use lazy_static::lazy_static;
 use regex::Regex;
 
+#[cfg(test)]
+#[path = "./commit_test.rs"]
+mod commit_test;
+
 lazy_static! {
     static ref SUMMARY_RE: Regex = Regex::new(r#"^\s*(\w+)\(?([\w,_-]+)?\)?(!)?:?(.*)"#).unwrap();
     static ref REF_RE: Regex = Regex::new(r#"\w+\s+#(\d+)"#).unwrap();
 }
 
 /// A Commit represents a commit in the repository with its metadata.
+#[derive(Debug, Clone)]
 pub struct Commit<'a> {
     commit: git2::Commit<'a>,
 }
@@ -21,13 +26,14 @@ impl Commit<'_> {
     }
 
     /// Returns the verb in the summary of the commit message if specified.
-    pub fn verb(&self) -> &str {
+    pub fn verb(&self) -> &'static str {
         return self
             .title()
             .and_then(|title| {
                 SUMMARY_RE.captures(title).and_then(|caps| {
                     caps.get(1)
                         .map(|verb| match verb.as_str().to_lowercase().as_str() {
+                            // TODO: create an enum for these.
                             "feat" | "feature" => "Feature",
                             "fix" | "fixed" | "fixes" => "Fix",
                             "ref" | "refactor" | "refactored" => "Refactor",
@@ -91,6 +97,12 @@ impl Commit<'_> {
 impl<'a> From<git2::Commit<'a>> for Commit<'a> {
     fn from(commit: git2::Commit<'a>) -> Self {
         Commit { commit }
+    }
+}
+
+impl<'a> PartialEq for Commit<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.commit.id() == other.commit.id()
     }
 }
 
