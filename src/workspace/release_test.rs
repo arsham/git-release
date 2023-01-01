@@ -31,7 +31,7 @@ mod get_verb_groups {
             .ok_or("not found")?
             .get(0)
             .ok_or("not found")?;
-        assert_eq!(commit, *got);
+        assert_eq!(commit, **got);
         Ok(())
     }
 
@@ -53,9 +53,12 @@ mod get_verb_groups {
         let commit3 = repo.find_commit(oid)?;
 
         let release: Release = vec![commit1.clone(), commit2.clone(), commit3.clone()].into();
-        let mut want = HashMap::<Verb, Vec<Commit>>::new();
-        want.insert(Verb::Feature, vec![commit1.into(), commit3.into()]);
-        want.insert(Verb::Fix, vec![commit2.into()]);
+        let mut want = HashMap::<Verb, Vec<&Commit>>::new();
+        let commit1 = &commit1.into();
+        let commit2 = &commit2.into();
+        let commit3 = &commit3.into();
+        want.insert(Verb::Feature, vec![commit1, commit3]);
+        want.insert(Verb::Fix, vec![commit2]);
 
         let got = release.get_verb_groups();
         assert_eq!(want, got);

@@ -17,9 +17,9 @@ impl<'a> Release<'a> {
         Release { commits }
     }
 
-    pub fn get_verb_groups(self) -> HashMap<Verb, Vec<Commit<'a>>> {
-        let mut map: HashMap<Verb, Vec<Commit>> = HashMap::with_capacity(self.commits.len());
-        for commit in self.commits {
+    pub fn get_verb_groups(&self) -> HashMap<Verb, Vec<&Commit<'a>>> {
+        let mut map: HashMap<Verb, Vec<&Commit>> = HashMap::with_capacity(self.commits.len());
+        for commit in &self.commits {
             let verb = commit.verb();
             map.entry(verb).or_default().push(commit);
         }
