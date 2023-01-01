@@ -1,5 +1,6 @@
-#[cfg(test)]
-use crate::{common_test, workspace::commit::Commit};
+use crate::common_test;
+use crate::workspace::commit::Reference;
+use crate::workspace::commit::{Commit, Verb};
 
 #[cfg(test)]
 mod title {
@@ -38,7 +39,7 @@ mod verb {
 
             let commit: Commit = repo.find_commit(oid)?.into();
             let res = commit.verb();
-            assert_eq!("Misc", res, "{body}");
+            assert_eq!(Verb::Misc, res, "{body}");
         }
         Ok(())
     }
@@ -46,29 +47,29 @@ mod verb {
     #[test]
     fn verb_with_no_section() -> Result<(), Box<dyn std::error::Error>> {
         let tcs = vec![
-            ("feat", "Feature"),
-            ("feature", "Feature"),
-            ("fix", "Fix"),
-            ("fixed", "Fix"),
-            ("fixes", "Fix"),
-            ("ref", "Refactor"),
-            ("refactor", "Refactor"),
-            ("refactored", "Refactor"),
-            ("chore", "Chore"),
-            ("enhance", "Enhancements"),
-            ("enhanced", "Enhancements"),
-            ("enhancement", "Enhancements"),
-            ("enhancements", "Enhancements"),
-            ("improve", "Enhancements"),
-            ("improved", "Enhancements"),
-            ("improves", "Enhancements"),
-            ("improvement", "Enhancements"),
-            ("improvements", "Enhancements"),
-            ("style", "Style"),
-            ("ci", "CI"),
-            ("CI", "CI"),
-            ("doc", "Documentation"),
-            ("docs", "Documentation"),
+            ("feat", Verb::Feature),
+            ("feature", Verb::Feature),
+            ("fix", Verb::Fix),
+            ("fixed", Verb::Fix),
+            ("fixes", Verb::Fix),
+            ("ref", Verb::Refactor),
+            ("refactor", Verb::Refactor),
+            ("refactored", Verb::Refactor),
+            ("chore", Verb::Chore),
+            ("enhance", Verb::Enhancements),
+            ("enhanced", Verb::Enhancements),
+            ("enhancement", Verb::Enhancements),
+            ("enhancements", Verb::Enhancements),
+            ("improve", Verb::Enhancements),
+            ("improved", Verb::Enhancements),
+            ("improves", Verb::Enhancements),
+            ("improvement", Verb::Enhancements),
+            ("improvements", Verb::Enhancements),
+            ("style", Verb::Style),
+            ("ci", Verb::CI),
+            ("CI", Verb::CI),
+            ("doc", Verb::Documentation),
+            ("docs", Verb::Documentation),
         ];
         for tc in tcs {
             let (dir, _) = common_test::repo_init();
@@ -119,7 +120,7 @@ mod verb {
 
             let commit: Commit = repo.find_commit(oid)?.into();
             let res = commit.verb();
-            assert_eq!("Feature", res);
+            assert_eq!(Verb::Feature, res);
         }
         Ok(())
     }
@@ -128,7 +129,6 @@ mod verb {
 #[cfg(test)]
 mod references {
     use super::*;
-    use crate::workspace::commit::Reference;
 
     #[test]
     fn no_references() -> Result<(), Box<dyn std::error::Error>> {

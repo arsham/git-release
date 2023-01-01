@@ -72,8 +72,8 @@ impl Repository {
             Ok(tag.to_string())
         } else {
             let head = self.repo.head()?;
-            // TODO: remove unwrap
-            Ok(head.peel_to_commit().unwrap().id().to_string())
+            let id = head.peel_to_commit()?.id();
+            Ok(id.to_string())
         }
     }
 

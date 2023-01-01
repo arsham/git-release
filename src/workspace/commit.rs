@@ -26,30 +26,16 @@ impl Commit<'_> {
     }
 
     /// Returns the verb in the summary of the commit message if specified.
-    pub fn verb(&self) -> &'static str {
+    pub fn verb(&self) -> Verb {
         return self
             .title()
             .and_then(|title| {
                 SUMMARY_RE.captures(title).and_then(|caps| {
                     caps.get(1)
-                        .map(|verb| match verb.as_str().to_lowercase().as_str() {
-                            // TODO: create an enum for these.
-                            "feat" | "feature" => "Feature",
-                            "fix" | "fixed" | "fixes" => "Fix",
-                            "ref" | "refactor" | "refactored" => "Refactor",
-                            "chore" => "Chore",
-                            "enhance" | "enhanced" => "Enhancements",
-                            "enhancement" | "enhancements" => "Enhancements",
-                            "improve" | "improved" | "improves" => "Enhancements",
-                            "improvement" | "improvements" => "Enhancements",
-                            "style" => "Style",
-                            "ci" => "CI",
-                            "doc" | "docs" => "Documentation",
-                            _ => "Misc",
-                        })
+                        .map(|verb| verb.as_str().to_lowercase().as_str().into())
                 })
             })
-            .unwrap_or("Misc");
+            .unwrap_or(Verb::Misc);
     }
 
     /// Returns a vector of references to other issues on github.
@@ -109,3 +95,35 @@ impl<'a> PartialEq for Commit<'a> {
 /// A Reference represents a link to a github issue.
 #[derive(Debug, PartialEq, Eq)]
 pub struct Reference(pub u16);
+
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub enum Verb {
+    Feature,
+    Fix,
+    Refactor,
+    Chore,
+    Enhancements,
+    Style,
+    CI,
+    Documentation,
+    Misc,
+}
+
+impl From<&str> for Verb {
+    fn from(value: &str) -> Self {
+        match value {
+            "feat" | "feature" => Verb::Feature,
+            "fix" | "fixed" | "fixes" => Verb::Fix,
+            "ref" | "refactor" | "refactored" => Verb::Refactor,
+            "chore" => Verb::Chore,
+            "enhance" | "enhanced" => Verb::Enhancements,
+            "enhancement" | "enhancements" => Verb::Enhancements,
+            "improve" | "improved" | "improves" => Verb::Enhancements,
+            "improvement" | "improvements" => Verb::Enhancements,
+            "style" => Verb::Style,
+            "ci" => Verb::CI,
+            "doc" | "docs" => Verb::Documentation,
+            _ => Verb::Misc,
+        }
+    }
+}

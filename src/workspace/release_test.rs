@@ -1,9 +1,10 @@
+use std::collections::HashMap;
+
 use super::Release;
-use crate::{common_test, workspace::commit::Commit};
+use crate::common_test;
+use crate::workspace::commit::{Commit, Verb};
 
 mod get_verb_groups {
-    use std::collections::HashMap;
-
     use super::*;
 
     #[test]
@@ -26,7 +27,7 @@ mod get_verb_groups {
 
         let got = release.get_verb_groups();
         let got = got
-            .get("Feature")
+            .get(&Verb::Feature)
             .ok_or("not found")?
             .get(0)
             .ok_or("not found")?;
@@ -52,9 +53,9 @@ mod get_verb_groups {
         let commit3 = repo.find_commit(oid)?;
 
         let release: Release = vec![commit1.clone(), commit2.clone(), commit3.clone()].into();
-        let mut want = HashMap::<&str, Vec<Commit>>::new();
-        want.insert("Feature", vec![commit1.into(), commit3.into()]);
-        want.insert("Fix", vec![commit2.into()]);
+        let mut want = HashMap::<Verb, Vec<Commit>>::new();
+        want.insert(Verb::Feature, vec![commit1.into(), commit3.into()]);
+        want.insert(Verb::Fix, vec![commit2.into()]);
 
         let got = release.get_verb_groups();
         assert_eq!(want, got);

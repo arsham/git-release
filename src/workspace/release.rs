@@ -4,7 +4,7 @@
 #[path = "./release_test.rs"]
 mod release_test;
 
-use super::commit::Commit;
+use super::commit::{Commit, Verb};
 use std::collections::HashMap;
 
 /// A Release represents one of more Commits, grouped by the verbs in their title.
@@ -17,11 +17,11 @@ impl<'a> Release<'a> {
         Release { commits }
     }
 
-    pub fn get_verb_groups(self) -> HashMap<&'a str, Vec<Commit<'a>>> {
-        let mut map = HashMap::with_capacity(self.commits.len());
+    pub fn get_verb_groups(self) -> HashMap<Verb, Vec<Commit<'a>>> {
+        let mut map: HashMap<Verb, Vec<Commit>> = HashMap::with_capacity(self.commits.len());
         for commit in self.commits {
             let verb = commit.verb();
-            map.entry(verb).or_insert(vec![]).push(commit);
+            map.entry(verb).or_default().push(commit);
         }
         map
     }
