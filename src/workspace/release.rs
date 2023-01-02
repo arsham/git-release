@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 #[cfg(test)]
 #[path = "./release_test.rs"]
 mod release_test;
@@ -14,6 +12,7 @@ pub struct Release<'a> {
 }
 
 impl<'a> Release<'a> {
+    #[allow(dead_code)]
     pub fn new(commits: Vec<Commit<'a>>) -> Self {
         Release { commits }
     }
