@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+use std::fmt::Display;
+
 use lazy_static::lazy_static;
 use regex::Regex;
 
@@ -58,6 +60,7 @@ impl Commit<'_> {
     }
 
     /// Returns a vector of subjects in the title if provided. Subjects are separated by comma.
+    // TODO: rename this to avoid confusion with git's subject.
     pub fn subjects(&self) -> Option<Vec<&str>> {
         self.title().and_then(|title| {
             return SUMMARY_RE
@@ -135,5 +138,46 @@ impl From<&str> for Verb {
             "doc" | "docs" => Verb::Documentation,
             _ => Verb::Misc,
         }
+    }
+}
+
+impl Display for Commit<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut subjects = String::new();
+        if let Some(s) = self.subjects() {
+            subjects.push_str("**");
+            subjects.push_str(&s.join(", "));
+            subjects.push_str(":** ");
+        }
+
+        let title = match self.title().and_then(|title| {
+            if !title.contains(':') {
+                return Some(title);
+            }
+            SUMMARY_RE
+                .captures(title)
+                .and_then(|caps| Some(caps.get(5)?.as_str().trim()))
+        }) {
+            Some(t) => t,
+            None => return Err(std::fmt::Error),
+        };
+        let title = first_letter_uppercase(title);
+
+        let breaking = if self.is_breaking() {
+            " [**BREAKING CHANGE**]"
+        } else {
+            ""
+        };
+
+        write!(f, "{subjects}{title}{breaking}")?;
+        Ok(())
+    }
+}
+
+fn first_letter_uppercase(s: &str) -> String {
+    let mut c = s.chars();
+    match c.next() {
+        Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
+        None => String::new(),
     }
 }

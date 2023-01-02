@@ -317,3 +317,83 @@ mod is_breaking {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod display_fmt {
+    use super::*;
+
+    #[test]
+    fn just_title() -> Result<(), Box<dyn std::error::Error>> {
+        let (dir, _) = common_test::repo_init();
+        let repo = git2::Repository::open(&dir)?;
+
+        let msg = "this is a test\n\nBody.\n\nFooter";
+        let (oid, _) = common_test::commit(&repo, "filename", Some(msg));
+        let commit: Commit = repo.find_commit(oid)?.into();
+
+        let want = "This is a test";
+        assert_eq!(want, format!("{commit}"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn with_verb() -> Result<(), Box<dyn std::error::Error>> {
+        let (dir, _) = common_test::repo_init();
+        let repo = git2::Repository::open(&dir)?;
+
+        let msg = "feat: this is a test\n\nBody.\n\nFooter";
+        let (oid, _) = common_test::commit(&repo, "filename", Some(msg));
+        let commit: Commit = repo.find_commit(oid)?.into();
+
+        let want = "This is a test";
+        assert_eq!(want, format!("{commit}"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn with_subjects() -> Result<(), Box<dyn std::error::Error>> {
+        let (dir, _) = common_test::repo_init();
+        let repo = git2::Repository::open(&dir)?;
+
+        let msg = "feat(repo, server): this is a test\n\nBody.\n\nFooter";
+        let (oid, _) = common_test::commit(&repo, "filename", Some(msg));
+        let commit: Commit = repo.find_commit(oid)?.into();
+
+        let want = "**repo, server:** This is a test";
+        assert_eq!(want, format!("{commit}"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn with_breaking_in_summary() -> Result<(), Box<dyn std::error::Error>> {
+        let (dir, _) = common_test::repo_init();
+        let repo = git2::Repository::open(&dir)?;
+
+        let msg = "feat!: this is a test\n\nBody.\n\nFooter";
+        let (oid, _) = common_test::commit(&repo, "filename", Some(msg));
+        let commit: Commit = repo.find_commit(oid)?.into();
+
+        let want = "This is a test [**BREAKING CHANGE**]";
+        assert_eq!(want, format!("{commit}"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn with_breaking_in_footer() -> Result<(), Box<dyn std::error::Error>> {
+        let (dir, _) = common_test::repo_init();
+        let repo = git2::Repository::open(&dir)?;
+
+        let msg = "feat: this is a test\n\nBody.\n\nBREAKING CHANGE: there was a change";
+        let (oid, _) = common_test::commit(&repo, "filename", Some(msg));
+        let commit: Commit = repo.find_commit(oid)?.into();
+
+        let want = "This is a test [**BREAKING CHANGE**]";
+        assert_eq!(want, format!("{commit}"));
+
+        Ok(())
+    }
+}
