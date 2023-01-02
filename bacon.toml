@@ -30,6 +30,11 @@ command = ["cargo", "run", "--color", "always"]
 need_stdout = true
 allow_warnings = true
 
+[jobs.help]
+command = ["cargo", "run", "--color", "always", "--", "-h"]
+need_stdout = true
+allow_warnings = false
+
 [keybindings]
 a = "job:clippy-all"
 i = "job:initial"
@@ -37,5 +42,6 @@ c = "job:clippy"
 d = "job:doc-open"
 t = "job:test"
 r = "job:run"
+h = "job:help"
 k = "scroll-lines(-1)"
 j = "scroll-lines(1)"
