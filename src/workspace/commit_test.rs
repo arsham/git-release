@@ -1,4 +1,4 @@
-use crate::common_test;
+use crate::common_test::new_commit;
 use crate::workspace::commit::Reference;
 use crate::workspace::commit::{Commit, Verb};
 
@@ -10,10 +10,7 @@ mod title {
     fn message_is_one_line() -> Result<(), Box<dyn std::error::Error>> {
         let title = "this is a title";
         let body = format!("{title}\n\nThis is the body");
-        let (dir, _) = common_test::repo_init();
-        let repo = git2::Repository::open(&dir)?;
-        let (oid, _) = common_test::commit(&repo, "filename", Some(&body));
-
+        let (repo, oid) = new_commit("filename", &body)?;
         let commit: Commit = repo.find_commit(oid)?.into();
         let res = commit.title().ok_or("no title")?;
         assert_eq!(title, res);
@@ -33,10 +30,7 @@ mod verb {
             "title\n\nignore: this",
         ];
         for body in tcs {
-            let (dir, _) = common_test::repo_init();
-            let repo = git2::Repository::open(&dir)?;
-            let (oid, _) = common_test::commit(&repo, "filename", Some(body));
-
+            let (repo, oid) = new_commit("filename", body)?;
             let commit: Commit = repo.find_commit(oid)?.into();
             let res = commit.verb();
             assert_eq!(Verb::Misc, res, "{body}");
@@ -72,11 +66,8 @@ mod verb {
             ("docs", Verb::Documentation),
         ];
         for tc in tcs {
-            let (dir, _) = common_test::repo_init();
-            let repo = git2::Repository::open(&dir)?;
             let body = format!("{} something", tc.0);
-            let (oid, _) = common_test::commit(&repo, "filename", Some(&body));
-
+            let (repo, oid) = new_commit("filename", &body)?;
             let commit: Commit = repo.find_commit(oid)?.into();
             let res = commit.verb();
             assert_eq!(tc.1, res, "{}", tc.0);
@@ -113,11 +104,8 @@ mod verb {
             "!(server): something",
         ];
         for tc in tcs {
-            let (dir, _) = common_test::repo_init();
-            let repo = git2::Repository::open(&dir)?;
             let body = format!("feat{tc}");
-            let (oid, _) = common_test::commit(&repo, "filename", Some(&body));
-
+            let (repo, oid) = new_commit("filename", &body)?;
             let commit: Commit = repo.find_commit(oid)?.into();
             let res = commit.verb();
             assert_eq!(Verb::Feature, res);
@@ -141,9 +129,7 @@ mod references {
             "feat(commit): #a123 this is a title",
         ];
         for body in tcs {
-            let (dir, _) = common_test::repo_init();
-            let repo = git2::Repository::open(&dir)?;
-            let (oid, _) = common_test::commit(&repo, "filename", Some(body));
+            let (repo, oid) = new_commit("filename", body)?;
             let commit: Commit = repo.find_commit(oid)?.into();
             assert_eq!(Vec::<Reference>::new(), commit.references(), "{body}");
         }
@@ -152,10 +138,8 @@ mod references {
 
     #[test]
     fn in_summary() -> Result<(), Box<dyn std::error::Error>> {
-        let (dir, _) = common_test::repo_init();
-        let repo = git2::Repository::open(&dir)?;
         let body = "feat(commit): this links to #123\n\nSomething is here";
-        let (oid, _) = common_test::commit(&repo, "filename", Some(body));
+        let (repo, oid) = new_commit("filename", body)?;
         let commit: Commit = repo.find_commit(oid)?.into();
         assert_eq!(vec![Reference(123)], commit.references(), "{body}");
         Ok(())
@@ -163,10 +147,8 @@ mod references {
 
     #[test]
     fn in_start_of_line() -> Result<(), Box<dyn std::error::Error>> {
-        let (dir, _) = common_test::repo_init();
-        let repo = git2::Repository::open(&dir)?;
         let body = "feat:something 23\n\n#123: is the ref";
-        let (oid, _) = common_test::commit(&repo, "filename", Some(body));
+        let (repo, oid) = new_commit("filename", body)?;
         let commit: Commit = repo.find_commit(oid)?.into();
         assert_eq!(vec![Reference(123)], commit.references(), "{body}");
         Ok(())
@@ -174,10 +156,8 @@ mod references {
 
     #[test]
     fn at_the_end_of_line() -> Result<(), Box<dyn std::error::Error>> {
-        let (dir, _) = common_test::repo_init();
-        let repo = git2::Repository::open(&dir)?;
         let body = "feat:something 23\n\nRef #123";
-        let (oid, _) = common_test::commit(&repo, "filename", Some(body));
+        let (repo, oid) = new_commit("filename", body)?;
         let commit: Commit = repo.find_commit(oid)?.into();
         assert_eq!(vec![Reference(123)], commit.references());
         Ok(())
@@ -185,10 +165,8 @@ mod references {
 
     #[test]
     fn multiple_refs_in_line() -> Result<(), Box<dyn std::error::Error>> {
-        let (dir, _) = common_test::repo_init();
-        let repo = git2::Repository::open(&dir)?;
         let body = "feat:something 23\n\nRef #123, Close #456";
-        let (oid, _) = common_test::commit(&repo, "filename", Some(body));
+        let (repo, oid) = new_commit("filename", body)?;
         let commit: Commit = repo.find_commit(oid)?.into();
         assert_eq!(vec![Reference(123), Reference(456)], commit.references());
         Ok(())
@@ -210,9 +188,7 @@ mod subjects {
             "ref: (something): something",
         ];
         for body in tcs {
-            let (dir, _) = common_test::repo_init();
-            let repo = git2::Repository::open(&dir)?;
-            let (oid, _) = common_test::commit(&repo, "filename", Some(body));
+            let (repo, oid) = new_commit("filename", body)?;
             let commit: Commit = repo.find_commit(oid)?.into();
             let subjects = commit.subjects();
             assert!(subjects.is_none(), "{body} -> {:?}", subjects.unwrap());
@@ -250,9 +226,7 @@ mod subjects {
             ),
         ];
         for (body, want) in tcs {
-            let (dir, _) = common_test::repo_init();
-            let repo = git2::Repository::open(&dir)?;
-            let (oid, _) = common_test::commit(&repo, "filename", Some(body));
+            let (repo, oid) = new_commit("filename", body)?;
             let commit: Commit = repo.find_commit(oid)?.into();
             let subjects = commit.subjects();
             assert!(subjects.is_some(), "{body}");
@@ -275,9 +249,7 @@ mod is_breaking {
             "ref(repo): something 23\n\nRef #123!, Close #456",
         ];
         for body in tcs {
-            let (dir, _) = common_test::repo_init();
-            let repo = git2::Repository::open(&dir)?;
-            let (oid, _) = common_test::commit(&repo, "filename", Some(body));
+            let (repo, oid) = new_commit("filename", body)?;
             let commit: Commit = repo.find_commit(oid)?.into();
             assert!(!commit.is_breaking(), "{body}");
         }
@@ -292,9 +264,7 @@ mod is_breaking {
             "ref!(repo): something 23\n\nRef #123, Close #456",
         ];
         for body in tcs {
-            let (dir, _) = common_test::repo_init();
-            let repo = git2::Repository::open(&dir)?;
-            let (oid, _) = common_test::commit(&repo, "filename", Some(body));
+            let (repo, oid) = new_commit("filename", body)?;
             let commit: Commit = repo.find_commit(oid)?.into();
             assert!(commit.is_breaking(), "{body}");
         }
@@ -308,9 +278,7 @@ mod is_breaking {
             "ref(repo): this is a new api\n\nSomething.\nBREAKING CHANGE: this is a changed api",
         ];
         for body in tcs {
-            let (dir, _) = common_test::repo_init();
-            let repo = git2::Repository::open(&dir)?;
-            let (oid, _) = common_test::commit(&repo, "filename", Some(body));
+            let (repo, oid) = new_commit("filename", body)?;
             let commit: Commit = repo.find_commit(oid)?.into();
             assert!(commit.is_breaking(), "{body}");
         }
@@ -324,11 +292,8 @@ mod display_fmt {
 
     #[test]
     fn just_title() -> Result<(), Box<dyn std::error::Error>> {
-        let (dir, _) = common_test::repo_init();
-        let repo = git2::Repository::open(&dir)?;
-
-        let msg = "this is a test\n\nBody.\n\nFooter";
-        let (oid, _) = common_test::commit(&repo, "filename", Some(msg));
+        let body = "this is a test\n\nBody.\n\nFooter";
+        let (repo, oid) = new_commit("filename", body)?;
         let commit: Commit = repo.find_commit(oid)?.into();
 
         let want = "This is a test";
@@ -339,13 +304,9 @@ mod display_fmt {
 
     #[test]
     fn with_verb() -> Result<(), Box<dyn std::error::Error>> {
-        let (dir, _) = common_test::repo_init();
-        let repo = git2::Repository::open(&dir)?;
-
-        let msg = "feat: this is a test\n\nBody.\n\nFooter";
-        let (oid, _) = common_test::commit(&repo, "filename", Some(msg));
+        let body = "feat: this is a test\n\nBody.\n\nFooter";
+        let (repo, oid) = new_commit("filename", body)?;
         let commit: Commit = repo.find_commit(oid)?.into();
-
         let want = "This is a test";
         assert_eq!(want, format!("{commit}"));
 
@@ -354,11 +315,8 @@ mod display_fmt {
 
     #[test]
     fn with_subjects() -> Result<(), Box<dyn std::error::Error>> {
-        let (dir, _) = common_test::repo_init();
-        let repo = git2::Repository::open(&dir)?;
-
-        let msg = "feat(repo, server): this is a test\n\nBody.\n\nFooter";
-        let (oid, _) = common_test::commit(&repo, "filename", Some(msg));
+        let body = "feat(repo, server): this is a test\n\nBody.\n\nFooter";
+        let (repo, oid) = new_commit("filename", body)?;
         let commit: Commit = repo.find_commit(oid)?.into();
 
         let want = "**repo, server:** This is a test";
@@ -369,11 +327,8 @@ mod display_fmt {
 
     #[test]
     fn with_breaking_in_summary() -> Result<(), Box<dyn std::error::Error>> {
-        let (dir, _) = common_test::repo_init();
-        let repo = git2::Repository::open(&dir)?;
-
-        let msg = "feat!: this is a test\n\nBody.\n\nFooter";
-        let (oid, _) = common_test::commit(&repo, "filename", Some(msg));
+        let body = "feat!: this is a test\n\nBody.\n\nFooter";
+        let (repo, oid) = new_commit("filename", body)?;
         let commit: Commit = repo.find_commit(oid)?.into();
 
         let want = "This is a test [**BREAKING CHANGE**]";
@@ -384,11 +339,8 @@ mod display_fmt {
 
     #[test]
     fn with_breaking_in_footer() -> Result<(), Box<dyn std::error::Error>> {
-        let (dir, _) = common_test::repo_init();
-        let repo = git2::Repository::open(&dir)?;
-
-        let msg = "feat: this is a test\n\nBody.\n\nBREAKING CHANGE: there was a change";
-        let (oid, _) = common_test::commit(&repo, "filename", Some(msg));
+        let body = "feat: this is a test\n\nBody.\n\nBREAKING CHANGE: there was a change";
+        let (repo, oid) = new_commit("filename", body)?;
         let commit: Commit = repo.find_commit(oid)?.into();
 
         let want = "This is a test [**BREAKING CHANGE**]";

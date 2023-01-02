@@ -68,3 +68,13 @@ pub fn commit_lightweight_tag(repo: &Repository, filename: &str, tag: &str) -> (
     let tag = repo.tag_lightweight(tag, &obj, false).unwrap();
     (commit, tag)
 }
+
+pub fn new_commit<'a>(
+    filename: &'a str,
+    body: &'a str,
+) -> Result<(git2::Repository, git2::Oid), Box<dyn std::error::Error>> {
+    let (dir, _) = repo_init();
+    let repo = git2::Repository::open(&dir)?;
+    let (oid, _) = commit(&repo, filename, Some(body));
+    Ok((repo, oid))
+}

@@ -4,6 +4,7 @@ use difference::Changeset;
 
 use super::Release;
 use crate::common_test;
+use crate::common_test::new_commit;
 use crate::workspace::commit::{Commit, Verb};
 
 mod get_verb_groups {
@@ -18,12 +19,9 @@ mod get_verb_groups {
 
     #[test]
     fn one_commit() -> Result<(), Box<dyn std::error::Error>> {
-        let (dir, _) = common_test::repo_init();
-        let repo = git2::Repository::open(&dir)?;
         let body = "feat(repo): the title\n\nThe body.\n\nThe footer. Ref #123";
-        let (oid, _) = common_test::commit(&repo, "filename", Some(body));
+        let (repo, oid) = new_commit("filename", body)?;
         let commit = repo.find_commit(oid)?;
-
         let release: Release = vec![commit.clone()].into();
         let commit: Commit = commit.into();
 
@@ -74,11 +72,8 @@ mod display_fmt {
 
     #[test]
     fn one_group_one_commit() -> Result<(), Box<dyn std::error::Error>> {
-        let (dir, _) = common_test::repo_init();
-        let repo = git2::Repository::open(&dir)?;
-
-        let msg = "Feat(testing): this is a test";
-        let (oid, _) = common_test::commit(&repo, "filename", Some(msg));
+        let body = "Feat(testing): this is a test";
+        let (repo, oid) = new_commit("filename", body)?;
         let commit = repo.find_commit(oid)?;
 
         let release: Release = vec![commit].into();
