@@ -348,4 +348,86 @@ mod display_fmt {
 
         Ok(())
     }
+
+    #[test]
+    fn issue_in_summary() -> Result<(), Box<dyn std::error::Error>> {
+        let tcs = vec![
+            ("title ref #123", "Title (ref #123)"),
+            ("title (ref #123)", "Title (ref #123)"),
+            ("title close #123", "Title (ref #123)"),
+            ("title close #123 ref #456", "Title (ref #123, ref #456)"),
+        ];
+        for (body, want) in tcs {
+            let (repo, oid) = new_commit("filename", body)?;
+            let commit: Commit = repo.find_commit(oid)?.into();
+            assert_eq!(want, format!("{commit}"));
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    fn issue_in_body() -> Result<(), Box<dyn std::error::Error>> {
+        let tcs = vec![
+            ("title\n\nbody ref #123", "Title (ref #123)"),
+            ("title\n\nbody (ref #123)", "Title (ref #123)"),
+            ("title\n\nbody close #123", "Title (ref #123)"),
+            (
+                "title\n\nbody close #123 and ref #456",
+                "Title (ref #123, ref #456)",
+            ),
+        ];
+        for (body, want) in tcs {
+            let (repo, oid) = new_commit("filename", body)?;
+            let commit: Commit = repo.find_commit(oid)?.into();
+            assert_eq!(want, format!("{commit}"));
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    fn issue_in_footer() -> Result<(), Box<dyn std::error::Error>> {
+        let tcs = vec![
+            ("title\n\nbody\n\n ref #123", "Title (ref #123)"),
+            ("title\n\nbody\n\n (ref #123)", "Title (ref #123)"),
+            ("title\n\nbody\n\n close #123", "Title (ref #123)"),
+            (
+                "title\n\nbody\n\n close #123 and ref #456",
+                "Title (ref #123, ref #456)",
+            ),
+        ];
+        for (body, want) in tcs {
+            let (repo, oid) = new_commit("filename", body)?;
+            let commit: Commit = repo.find_commit(oid)?.into();
+            assert_eq!(want, format!("{commit}"));
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    fn issue_in_all_places() -> Result<(), Box<dyn std::error::Error>> {
+        let tcs = vec![
+            (
+                "title ref #11\n\nbody ref #22.\n\nref #33",
+                "Title (ref #11, ref #22, ref #33)",
+            ),
+            (
+                "title (ref #11)\n\nbody (ref #22).\n\n(ref #33)",
+                "Title (ref #11, ref #22, ref #33)",
+            ),
+            (
+                "title ref #11\n\nbody ref #22.\nanother ref #33\n\nref #44",
+                "Title (ref #11, ref #22, ref #33, ref #44)",
+            ),
+        ];
+        for (body, want) in tcs {
+            let (repo, oid) = new_commit("filename", body)?;
+            let commit: Commit = repo.find_commit(oid)?.into();
+            assert_eq!(want, format!("{commit}"));
+        }
+
+        Ok(())
+    }
 }

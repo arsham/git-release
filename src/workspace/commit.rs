@@ -12,7 +12,7 @@ mod commit_test;
 lazy_static! {
     static ref SUMMARY_RE: Regex =
         Regex::new(r#"^\s*(\w+)( *\(([ /.\w,_-]+)?\) *)?(!)? *:?(.*)"#).unwrap();
-    static ref REF_RE: Regex = Regex::new(r#"\w+\s+#(\d+)"#).unwrap();
+    static ref REF_RE: Regex = Regex::new(r#"\(?\w+\s+#(\d+)\)?"#).unwrap();
 }
 
 /// A Commit represents a commit in the repository with its metadata.
@@ -24,14 +24,17 @@ pub struct Commit<'a> {
 impl Commit<'_> {
     /// Returns the summary of the commit. If there is an error or the body is not valid UTF-8 it
     /// returns an empty string.
-    pub fn title(&self) -> Option<&str> {
-        self.commit.summary()
+    pub fn title(&self) -> Option<String> {
+        self.commit
+            .summary()
+            .map(|summary| REF_RE.replace_all(summary, "").trim().to_string())
     }
 
     /// Returns the verb in the summary of the commit message if specified.
     pub fn verb(&self) -> Verb {
         return self
-            .title()
+            .commit
+            .summary()
             .and_then(|title| {
                 SUMMARY_RE.captures(title).and_then(|caps| {
                     caps.get(1)
@@ -45,7 +48,7 @@ impl Commit<'_> {
     pub fn references(&self) -> Vec<Reference> {
         let body = &format!(
             "{}\n{}",
-            self.title().unwrap_or(""),
+            self.commit.summary().unwrap_or(""),
             self.commit.body().unwrap_or("")
         );
         let mut refs = vec![];
@@ -62,7 +65,7 @@ impl Commit<'_> {
     /// Returns a vector of subjects in the title if provided. Subjects are separated by comma.
     // TODO: rename this to avoid confusion with git's subject.
     pub fn subjects(&self) -> Option<Vec<&str>> {
-        self.title().and_then(|title| {
+        self.commit.summary().and_then(|title| {
             return SUMMARY_RE
                 .captures(title)
                 .and_then(|caps| Some(caps.get(3)?.as_str().split(',').map(str::trim).collect()));
@@ -73,7 +76,8 @@ impl Commit<'_> {
     /// 1. If the title has an explanation mark in front of the verb.
     /// 2. If the footer starts with `BREAKING CHANGE:`.
     pub fn is_breaking(&self) -> bool {
-        self.title()
+        self.commit
+            .summary()
             .and_then(|title| {
                 SUMMARY_RE
                     .captures(title)
@@ -108,6 +112,13 @@ impl<'a> PartialEq for Commit<'a> {
 /// A Reference represents a link to a github issue.
 #[derive(Debug, PartialEq, Eq)]
 pub struct Reference(pub u16);
+
+impl Reference {
+    /// Returns a pound sign with the issue number.
+    pub fn issue_ref(&self) -> String {
+        format!("#{}", self.0)
+    }
+}
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum Verb {
@@ -150,18 +161,20 @@ impl Display for Commit<'_> {
             subjects.push_str(":** ");
         }
 
-        let title = match self.title().and_then(|title| {
+        let title = self.title();
+        let title = title.and_then(|title| {
             if !title.contains(':') {
                 return Some(title);
             }
             SUMMARY_RE
-                .captures(title)
-                .and_then(|caps| Some(caps.get(5)?.as_str().trim()))
-        }) {
+                .captures(&title)
+                .and_then(|caps| Some(caps.get(5)?.as_str().trim().to_string()))
+        });
+        let mut title = match title {
             Some(t) => t,
             None => return Err(std::fmt::Error),
         };
-        let title = first_letter_uppercase(title);
+        first_letter_uppercase(&mut title);
 
         let breaking = if self.is_breaking() {
             " [**BREAKING CHANGE**]"
@@ -169,15 +182,28 @@ impl Display for Commit<'_> {
             ""
         };
 
-        write!(f, "{subjects}{title}{breaking}")?;
+        let mut refs = self
+            .references()
+            .into_iter()
+            .map(|reference| format!("ref {}", reference.issue_ref()))
+            .collect::<Vec<String>>()
+            .join(", ");
+        if !refs.is_empty() {
+            refs.insert_str(0, " (");
+            refs.push(')');
+        }
+
+        write!(f, "{subjects}{title}{breaking}{refs}")?;
         Ok(())
     }
 }
 
-fn first_letter_uppercase(s: &str) -> String {
+fn first_letter_uppercase(s: &mut String) {
     let mut c = s.chars();
-    match c.next() {
-        Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
-        None => String::new(),
+    if let Some(f) = c.next() {
+        s.remove(0);
+        // Should be this way because the character's uppercase could be two chars.
+        let upper = f.to_uppercase().to_string();
+        s.insert_str(0, &upper);
     }
 }
