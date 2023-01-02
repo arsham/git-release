@@ -1,10 +1,17 @@
 use std::path::Path;
 
 use git2::{Commit, ErrorClass, ErrorCode};
+use lazy_static::lazy_static;
+use regex::Regex;
 
 #[cfg(test)]
 #[path = "./repository_test.rs"]
 mod repository_test;
+
+lazy_static! {
+    static ref REPO_RE: Regex =
+        Regex::new(r#"github.com[:/](?P<user>[^/]+)/(?P<repo>.+?)(?:.git)?\n?$"#).unwrap();
+}
 
 /// Repository represents the workspace in a git repository. You can use this struct to query for
 /// various information against the underlying database.
@@ -26,7 +33,7 @@ impl Repository {
     pub fn latest_tag(&self) -> Result<String, git2::Error> {
         let tags = self.repo.tag_names(None)?;
         if let Some(Some(tag)) = tags.iter().last() {
-            Ok(tag.to_string())
+            Ok(tag.to_owned())
         } else {
             Err(git2::Error::new(
                 ErrorCode::NotFound,
@@ -67,7 +74,7 @@ impl Repository {
             .skip(1)
             .take(1);
         if let Some(Some(tag)) = tag.next() {
-            Ok(tag.to_string())
+            Ok(tag.to_owned())
         } else {
             let head = self.repo.head()?;
             let id = head.peel_to_commit()?.id();
@@ -113,5 +120,40 @@ impl Repository {
             })
             .collect();
         Ok(res)
+    }
+
+    fn repo_name_username(&self, remote: &str, index: usize) -> Result<String, git2::Error> {
+        let url = self.repo.find_remote(remote)?;
+        let url = url.url().ok_or_else(|| {
+            git2::Error::new(
+                ErrorCode::User,
+                ErrorClass::Repository,
+                "could not get the url of the repository",
+            )
+        })?;
+        if let Some(caps) = REPO_RE.captures(url) {
+            return Ok(caps
+                .get(index)
+                .ok_or_else(|| {
+                    git2::Error::new(
+                        ErrorCode::User,
+                        ErrorClass::Repository,
+                        format!("could not find the setting from the url: {url}"),
+                    )
+                })?
+                .as_str()
+                .to_owned());
+        }
+        Ok(url.to_owned())
+    }
+
+    /// Returns the repository name.
+    pub fn repo_name(&self, remote: &str) -> Result<String, git2::Error> {
+        self.repo_name_username(remote, 2)
+    }
+
+    /// Returns the user or organisation of the repository.
+    pub fn username(&self, remote: &str) -> Result<String, git2::Error> {
+        self.repo_name_username(remote, 1)
     }
 }

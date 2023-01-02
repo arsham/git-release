@@ -262,3 +262,30 @@ mod commits_between_tags {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod getting_names {
+    use crate::{common_test::repo_init, workspace::repository::Repository};
+
+    #[test]
+    fn repo_name() -> Result<(), Box<dyn std::error::Error>> {
+        let (dir, repo) = repo_init();
+        repo.remote_set_url("origin", "git@github.com:arsham/shark.git")?;
+        let repo = Repository::new(dir)?;
+        let name = repo.repo_name("origin")?;
+        assert_eq!("shark", &name);
+
+        Ok(())
+    }
+
+    #[test]
+    fn username() -> Result<(), Box<dyn std::error::Error>> {
+        let (dir, repo) = repo_init();
+        repo.remote_set_url("origin", "git@github.com:arsham/shark.git")?;
+        let repo = Repository::new(dir)?;
+        let name = repo.username("origin")?;
+        assert_eq!("arsham", &name);
+
+        Ok(())
+    }
+}
