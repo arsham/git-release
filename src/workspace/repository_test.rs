@@ -224,8 +224,7 @@ mod commits_between_tags {
         let ws = Repository::new(&dir)?;
         let res: Vec<git2::Oid> = ws
             .commits_between_tags(tag1, tag2)?
-            .iter()
-            .map(git2::Commit::id)
+            .map(|c| c.id())
             .collect();
         assert_eq!(vec![commit2], res);
 
@@ -254,8 +253,7 @@ mod commits_between_tags {
         let ws = Repository::new(&dir)?;
         let res: Vec<git2::Oid> = ws
             .commits_between_tags(tag1, tag2)?
-            .iter()
-            .map(git2::Commit::id)
+            .map(|c| c.id())
             .collect();
         assert_eq!(vec![commit2, commit3, commit4], res);
 

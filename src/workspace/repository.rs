@@ -82,14 +82,18 @@ impl Repository {
         }
     }
 
-    /// Returns all commits between two tags. It excludes the commit that `from` is pointing at,
-    /// and includes the commit that the `to` is pointing at.
+    /// Returns and iterator that would produce all commits between two tags. It excludes the
+    /// commit that `from` is pointing at, and includes the commit that the `to` is pointing at.
     ///
     /// # Errors
     ///
     /// If either tags is not in the repository, or both point to the same commit, an `Err` is
     /// returned.
-    pub fn commits_between_tags(&self, from: &str, to: &str) -> Result<Vec<Commit>, git2::Error> {
+    pub fn commits_between_tags(
+        &self,
+        from: &str,
+        to: &str,
+    ) -> Result<impl Iterator<Item = Commit>, git2::Error> {
         let from_obj = self.repo.revparse_single(from)?;
         let to_obj = self.repo.revparse_single(to)?;
         let from = from_obj.id();
@@ -109,16 +113,13 @@ impl Repository {
         let range = format!("{from}..{to}");
         res.push_range(&range)?;
         res.set_sorting(git2::Sort::REVERSE)?;
-        let res = res
-            .filter_map(Result::ok)
-            .filter_map(|oid| {
-                if let Ok(oid) = self.repo.find_commit(oid) {
-                    Some(oid)
-                } else {
-                    None
-                }
-            })
-            .collect();
+        let res = res.filter_map(Result::ok).filter_map(|oid| {
+            if let Ok(oid) = self.repo.find_commit(oid) {
+                Some(oid)
+            } else {
+                None
+            }
+        });
         Ok(res)
     }
 

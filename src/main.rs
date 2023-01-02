@@ -44,7 +44,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         },
     }
     let commits = repo.commits_between_tags(&prev, &latest)?;
-    let release: Release = commits.into();
+    let release: Release = commits.collect::<Vec<git2::Commit>>().into();
     println!("{release}");
     Ok(())
 }
