@@ -31,6 +31,10 @@ pub struct Opt {
     #[structopt(short, long, default_value = "origin")]
     pub remote: String,
 
+    /// Publish the release results to github.
+    #[structopt(short, long)]
+    pub publish: bool,
+
     #[structopt(long, env, hide_env_values = true)]
     pub github_token: String,
 

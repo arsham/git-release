@@ -4,6 +4,7 @@ use crate::workspace::repository::Repository;
 #[cfg(test)]
 mod latest_tag {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn no_tag_set() -> Result<(), git2::Error> {
@@ -49,6 +50,7 @@ mod latest_tag {
 #[cfg(test)]
 mod previous_tag {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn validate_tag_signed_not_valid() -> Result<(), Box<dyn std::error::Error>> {
@@ -155,6 +157,7 @@ mod previous_tag {
 #[cfg(test)]
 mod commits_between_tags {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn from_tag_not_in_repo() -> Result<(), Box<dyn std::error::Error>> {
@@ -264,6 +267,7 @@ mod commits_between_tags {
 #[cfg(test)]
 mod getting_names {
     use crate::{common_test::repo_init, workspace::repository::Repository};
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn repo_name() -> Result<(), Box<dyn std::error::Error>> {

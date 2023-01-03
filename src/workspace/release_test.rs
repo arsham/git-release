@@ -9,6 +9,7 @@ use crate::workspace::commit::{Commit, Verb};
 
 mod get_verb_groups {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn no_commits() -> Result<(), Box<dyn std::error::Error>> {
@@ -69,6 +70,7 @@ mod get_verb_groups {
 #[cfg(test)]
 mod display_fmt {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn one_group_one_commit() -> Result<(), Box<dyn std::error::Error>> {

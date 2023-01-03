@@ -5,6 +5,7 @@ use crate::workspace::commit::{Commit, Verb};
 #[cfg(test)]
 mod title {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn message_is_one_line() -> Result<(), Box<dyn std::error::Error>> {
@@ -21,6 +22,7 @@ mod title {
 #[cfg(test)]
 mod verb {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn no_verbs() -> Result<(), Box<dyn std::error::Error>> {
@@ -117,6 +119,7 @@ mod verb {
 #[cfg(test)]
 mod references {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn no_references() -> Result<(), Box<dyn std::error::Error>> {
@@ -176,6 +179,7 @@ mod references {
 #[cfg(test)]
 mod subjects {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn no_subject() -> Result<(), Box<dyn std::error::Error>> {
@@ -289,6 +293,7 @@ mod is_breaking {
 #[cfg(test)]
 mod display_fmt {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn just_title() -> Result<(), Box<dyn std::error::Error>> {
