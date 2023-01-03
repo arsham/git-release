@@ -2,12 +2,14 @@ use args::Tag;
 use workspace::release::Release;
 
 mod args;
+mod gh;
 mod workspace;
 
 #[cfg(test)]
 mod common_test;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let opt = args::Opt::new();
 
     if let Some(args::Command::Version) = opt.sub_commands {
@@ -43,8 +45,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             prev = from;
         },
     }
+
+    let token = &std::env::var("GITHUB_TOKEN")?;
+    let user = &repo.username(&opt.remote)?;
+    let repo_name = &repo.repo_name(&opt.remote)?;
     let commits = repo.commits_between_tags(&prev, &latest)?;
     let release: Release = commits.collect::<Vec<git2::Commit>>().into();
-    println!("{release}");
+
+    let releaser = gh::Release {
+        token,
+        user,
+        repository: repo_name,
+        tag: &latest,
+        description: &format!("{release}"),
+    };
+    releaser.create().await?;
     Ok(())
 }

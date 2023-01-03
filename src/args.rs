@@ -26,12 +26,21 @@ pub struct Opt {
 
     #[structopt(skip)]
     pub tags: Tag,
+
+    /// The remote to operate on.
+    #[structopt(short, long, default_value = "origin")]
+    pub remote: String,
+
+    #[structopt(long, env, hide_env_values = true)]
+    pub github_token: String,
 }
 
 #[derive(StructOpt, Debug)]
 pub enum Command {
     /// Print the application version.
     Version,
+    /// Publish the release information to github.
+    Publish,
 }
 
 impl Opt {
@@ -41,11 +50,11 @@ impl Opt {
             if !tag.contains("..") {
                 opt.tags = Tag::Single(tag.clone());
             } else if tag.ends_with("..") {
-                opt.tags = Tag::From(tag.strip_suffix("..").unwrap().to_string());
+                opt.tags = Tag::From(tag.strip_suffix("..").unwrap().to_owned());
             } else {
                 let mut splits = tag.split("..");
-                let from = splits.next().unwrap().to_string();
-                let to = splits.next().unwrap().to_string();
+                let from = splits.next().unwrap().to_owned();
+                let to = splits.next().unwrap().to_owned();
                 opt.tags = Tag::Range(from, to);
             }
         }

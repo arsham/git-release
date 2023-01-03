@@ -25,7 +25,7 @@ impl Commit<'_> {
     pub fn title(&self) -> Option<String> {
         self.commit
             .summary()
-            .map(|summary| REF_RE.replace_all(summary, "").trim().to_string())
+            .map(|summary| REF_RE.replace_all(summary, "").trim().to_owned())
     }
 
     /// Returns the verb in the summary of the commit message if specified.
@@ -166,7 +166,7 @@ impl Display for Commit<'_> {
             }
             SUMMARY_RE
                 .captures(&title)
-                .and_then(|caps| Some(caps.get(5)?.as_str().trim().to_string()))
+                .and_then(|caps| Some(caps.get(5)?.as_str().trim().to_owned()))
         });
         let mut title = match title {
             Some(t) => t,
