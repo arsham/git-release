@@ -1,4 +1,5 @@
 use args::Tag;
+use colored::*;
 use workspace::release::Release;
 
 mod args;
@@ -59,6 +60,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         tag: &latest,
         description: &format!("{release}"),
     };
-    releaser.create().await?;
+
+    if let Err(err) = releaser.create().await {
+        if !opt.force {
+            return Err(err.into());
+        }
+        let id = releaser.release_id().await?;
+        releaser.update(id.0).await?;
+        println!("Force updated the {} tag", latest.green().bold());
+    }
     Ok(())
 }

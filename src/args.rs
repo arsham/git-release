@@ -33,6 +33,10 @@ pub struct Opt {
 
     #[structopt(long, env, hide_env_values = true)]
     pub github_token: String,
+
+    /// If publishing fails, try fording it. This will replace the previous contents!
+    #[structopt(short, long)]
+    pub force: bool,
 }
 
 #[derive(StructOpt, Debug)]

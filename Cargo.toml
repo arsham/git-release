@@ -10,6 +10,7 @@ regex = "1.7"
 structopt = { version = "0.3", features = ["color"] }
 octocrab = "0.18"
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros"] }
+colored = "2"
 
 [dev-dependencies]
 tempfile = "3.3"
