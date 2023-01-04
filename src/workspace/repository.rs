@@ -1,8 +1,10 @@
 use std::path::Path;
 
-use git2::{Commit, ErrorClass, ErrorCode};
+use git2::Commit;
 use lazy_static::lazy_static;
 use regex::Regex;
+
+use crate::workspace::errors;
 
 #[cfg(test)]
 #[path = "./repository_test.rs"]
@@ -20,8 +22,8 @@ pub struct Repository {
 }
 
 impl Repository {
-    pub fn new<T: AsRef<Path>>(dir: T) -> Result<Self, git2::Error> {
-        let repo = git2::Repository::open(dir)?;
+    pub fn new<T: AsRef<Path>>(dir: T) -> Result<Self, errors::GRError> {
+        let repo = git2::Repository::open(dir).map_err(errors::GRError::Repository)?;
         Ok(Self { repo })
     }
 
@@ -30,30 +32,26 @@ impl Repository {
     /// # Errors
     ///
     /// If there are no tags, `Err` is returned.
-    pub fn latest_tag(&self) -> Result<String, git2::Error> {
-        let tags = self.repo.tag_names(None)?;
+    pub fn latest_tag(&self) -> Result<String, errors::GRError> {
+        let tags = self
+            .repo
+            .tag_names(None)
+            .map_err(errors::GRError::TagNameList)?;
         if let Some(Some(tag)) = tags.iter().last() {
             Ok(tag.to_owned())
         } else {
-            Err(git2::Error::new(
-                ErrorCode::NotFound,
-                ErrorClass::Tag,
-                "no tags found",
-            ))
+            Err(errors::GRError::TagNotFound("latest".to_owned()))
         }
     }
 
-    pub fn validate_tag(&self, tag: &str) -> Result<git2::Oid, git2::Error> {
-        let rev = self.repo.revparse(tag)?;
+    pub fn validate_tag(&self, tag: &str) -> Result<git2::Oid, errors::GRError> {
+        let rev = self
+            .repo
+            .revparse(tag)
+            .map_err(errors::GRError::Repository)?;
         Ok(rev
             .from()
-            .ok_or_else(|| {
-                git2::Error::new(
-                    ErrorCode::NotFound,
-                    ErrorClass::Tag,
-                    format!("given {tag} tag is not valid"),
-                )
-            })?
+            .ok_or_else(|| errors::GRError::TagNotFound(tag.to_owned()))?
             .id())
     }
 
@@ -63,10 +61,13 @@ impl Repository {
     /// # Errors
     ///
     /// If the tag is not in the repository, an `Err` is returned.
-    pub fn previous_tag(&self, current: &str) -> Result<String, git2::Error> {
+    pub fn previous_tag(&self, current: &str) -> Result<String, errors::GRError> {
         self.validate_tag(current)?;
 
-        let tags = self.repo.tag_names(None)?;
+        let tags = self
+            .repo
+            .tag_names(None)
+            .map_err(errors::GRError::TagNameList)?;
         let mut tag = tags
             .iter()
             .rev()
@@ -93,7 +94,7 @@ impl Repository {
         &self,
         from: &str,
         to: &str,
-    ) -> Result<impl Iterator<Item = Commit>, git2::Error> {
+    ) -> Result<impl Iterator<Item = Commit>, errors::GRError> {
         let from_obj = self.repo.revparse_single(from)?;
         let to_obj = self.repo.revparse_single(to)?;
         let from = from_obj.id();
@@ -102,11 +103,7 @@ impl Repository {
         let from_obj = from_obj.peel_to_commit()?;
         let to_obj = to_obj.peel_to_commit()?;
         if from_obj.id() == to_obj.id() {
-            return Err(git2::Error::new(
-                ErrorCode::User,
-                ErrorClass::Tag,
-                "both tags are pointed at the same commit",
-            ));
+            return Err(errors::GRError::TwinTags);
         }
 
         let mut res = self.repo.revwalk()?;
@@ -123,24 +120,18 @@ impl Repository {
         Ok(res)
     }
 
-    fn repo_name_username(&self, remote: &str, index: usize) -> Result<String, git2::Error> {
+    fn repo_name_username(&self, remote: &str, index: usize) -> Result<String, errors::GRError> {
         let url = self.repo.find_remote(remote)?;
         let url = url.url().ok_or_else(|| {
-            git2::Error::new(
-                ErrorCode::User,
-                ErrorClass::Repository,
-                "could not get the url of the repository",
-            )
+            errors::GRError::URLError("could not get the url of the repository".to_owned())
         })?;
         if let Some(caps) = REPO_RE.captures(url) {
             return Ok(caps
                 .get(index)
                 .ok_or_else(|| {
-                    git2::Error::new(
-                        ErrorCode::User,
-                        ErrorClass::Repository,
-                        format!("could not find the setting from the url: {url}"),
-                    )
+                    errors::GRError::URLError(format!(
+                        "could not find the setting from the url: {url}",
+                    ))
                 })?
                 .as_str()
                 .to_owned());
@@ -149,12 +140,12 @@ impl Repository {
     }
 
     /// Returns the repository name.
-    pub fn repo_name(&self, remote: &str) -> Result<String, git2::Error> {
+    pub fn repo_name(&self, remote: &str) -> Result<String, errors::GRError> {
         self.repo_name_username(remote, 2)
     }
 
     /// Returns the user or organisation of the repository.
-    pub fn username(&self, remote: &str) -> Result<String, git2::Error> {
+    pub fn username(&self, remote: &str) -> Result<String, errors::GRError> {
         self.repo_name_username(remote, 1)
     }
 }

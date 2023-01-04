@@ -1,5 +1,7 @@
-use args::Tag;
+use anyhow::{Context, Result};
 use colored::*;
+
+use args::Tag;
 use workspace::release::Release;
 
 mod args;
@@ -10,7 +12,7 @@ mod workspace;
 mod common_test;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<()> {
     let opt = args::Opt::new();
 
     if let Some(args::Command::Version) = opt.sub_commands {
@@ -26,7 +28,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let prev: String;
     match opt.tags {
         Tag::None => {
-            latest = repo.latest_tag()?;
+            latest = repo.latest_tag().context("getting latest tag")?;
             prev = repo.previous_tag(&latest)?;
         },
         Tag::From(tag) => {

@@ -10,12 +10,11 @@ regex = "1.7"
 structopt = { version = "0.3", features = ["color"] }
 octocrab = "0.18"
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros"] }
+anyhow = "1.0.68"
+thiserror = "1.0.38"
 colored = "2"
 
 [dev-dependencies]
 tempfile = "3.3"
 difference = "2"
 pretty_assertions = "1"
-
-[build-dependencies]
-clap = "4"

@@ -9,6 +9,7 @@ pub struct Release<'a> {
 }
 
 impl<'a> Release<'a> {
+    /// Creates a new release based on the given criteria.
     pub async fn create(&self) -> octocrab::Result<octocrab::models::repos::Release> {
         let name = format!("Release {}", self.tag);
         Octocrab::builder()

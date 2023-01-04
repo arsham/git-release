@@ -1,4 +1,5 @@
 use super::super::super::common_test;
+use crate::workspace::errors;
 use crate::workspace::repository::Repository;
 
 #[cfg(test)]
@@ -7,7 +8,7 @@ mod latest_tag {
     use pretty_assertions::assert_eq;
 
     #[test]
-    fn no_tag_set() -> Result<(), git2::Error> {
+    fn no_tag_set() -> Result<(), errors::GRError> {
         let (dir, _) = common_test::repo_init();
         let ws = Repository::new(dir)?;
         let tag = ws.latest_tag();
@@ -16,7 +17,7 @@ mod latest_tag {
     }
 
     #[test]
-    fn one_tag() -> Result<(), git2::Error> {
+    fn one_tag() -> Result<(), errors::GRError> {
         let (dir, _) = common_test::repo_init();
         let repo = git2::Repository::open(&dir)?;
         let (commit, _) = common_test::commit(&repo, "file", None);
@@ -32,7 +33,7 @@ mod latest_tag {
     }
 
     #[test]
-    fn two_tags() -> Result<(), git2::Error> {
+    fn two_tags() -> Result<(), errors::GRError> {
         let (dir, _) = common_test::repo_init();
         let repo = git2::Repository::open(&dir)?;
         let tag_name = "tag1";

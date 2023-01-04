@@ -2,9 +2,10 @@
 #[path = "./release_test.rs"]
 mod release_test;
 
-use super::commit::{Commit, Verb};
 use std::collections::HashMap;
 use std::fmt::Display;
+
+use super::commit::{Commit, Verb};
 
 /// A Release represents one of more Commits, grouped by the verbs in their title.
 pub struct Release<'a> {
