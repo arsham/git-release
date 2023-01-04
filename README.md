@@ -1,8 +1,8 @@
 # Git Release
 
-![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/arsham/git-release/integration.yml?logo=github)
-![Crates.io](https://img.shields.io/crates/v/git-release?color=green&logo=rust&logoColor=orange)
-![License](https://img.shields.io/github/license/arsham/git-release)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/arsham/git-release/integration.yml?logo=github)](https://github.com/arsham/git-release/actions/workflows/integration.yml)
+[![Crates.io](https://img.shields.io/crates/v/git-release?color=green&logo=rust&logoColor=orange)](https://crates.io/crates/git-release)
+[![License](https://img.shields.io/github/license/arsham/git-release)](https://github.com/arsham/git-release/blob/master/LICENSE)
 
 This program can set the release information based on all commits of a tag. To
 see the example visit [Releases](https://github.com/arsham/git-release/releases)
