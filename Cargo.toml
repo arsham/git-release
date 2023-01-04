@@ -2,6 +2,13 @@
 name = "git-release"
 version = "0.1.0"
 edition = "2021"
+authors = ["Arsham Shirvani"]
+documentation = "https://docs.rs/crate/git-release"
+repository = "https://github.com/arsham/git-release"
+keywords = ["git", "github", "release"]
+categories = ["command-line-utilities", "development-tools"]
+license = "MIT"
+description = "Set the release information based on all commits of a tag"
 
 [dependencies]
 git2 = "0.15"
