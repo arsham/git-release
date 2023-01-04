@@ -1,6 +1,7 @@
 # Git Release
 
-[![Continues Integration](https://github.com/arsham/git-release/actions/workflows/integration.yml/badge.svg)](https://github.com/arsham/git-release/actions/workflows/integration.yml)
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/arsham/git-release/integration.yml?logo=github)
+![Crates.io](https://img.shields.io/crates/v/git-release?color=green&logo=rust&logoColor=orange)
 ![License](https://img.shields.io/github/license/arsham/git-release)
 
 This program can set the release information based on all commits of a tag. To
@@ -34,18 +35,32 @@ up as a subcommand.
 
 ## Usage
 
-After you've made a tag, you can publish the current release documents by just
+After you've made a tag, you can print the current release documents by just
 running:
 
 ```bash
 git release
 ```
 
+To release you should provide `-p` flag:
+
+```bash
+git release -p
+```
+
 If you want to release an old tag:
 
 ```bash
-git release -t v0.1.2
+git release -p -t v0.1.2
 ```
+
+You can also provide a range:
+
+```bash
+git release -t v0.1.2..v0.2.0
+```
+
+Note that in this case the release will be `v0.2.0`.
 
 If you want to use a different remote other than the `origin`:
 
